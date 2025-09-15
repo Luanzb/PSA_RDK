@@ -1,5 +1,5 @@
-function [gabor] = UD_alpha_update(gabor,UD)
+function [RDK] = UD_alpha_update(RDK,UD)
 
-         gabor.contrast = UD.xCurrent;
+         RDK.kappa = UD.xCurrent*100;
 
 end

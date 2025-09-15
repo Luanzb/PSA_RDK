@@ -139,8 +139,8 @@ const.numDots = 25;
 const.dotSpeed_pix = RDK.speed_dot_pix;   % dot speed [pix/dec] %%%% GOOD PROXY? %%%
 const.sigDotSpeedMulti = 3; % acceleration (put 1 for without)
 
-const.durMinLife = 0.200;           const.numMinLife = (round(const.durMinLife/const.frame_dur));
-const.numMeanLife = 0.250;          const.numMeanLife = (round(const.numMeanLife/const.frame_dur));
+const.durMinLife = 0.166;           const.numMinLife = (round(const.durMinLife/const.frame_dur));
+const.numMeanLife = 0.300;          const.numMeanLife = (round(const.numMeanLife/const.frame_dur));
 
 %% Define circle parameters (dashed circle around the RDK)
 

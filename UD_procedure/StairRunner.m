@@ -26,7 +26,7 @@ load([info_file.folder '/' info_file.name])
 
 % first session only
 if sub.ses_num == 1
-    info.UD_start_value = .3;
+    info.UD_start_value = .7;
     info.UD_step_size_down = .05;
 end
 
@@ -49,11 +49,12 @@ end
 
 %% Run experiment
 
-[resp,UD] = Stair_On_Screen(info,trl,gabor,mask,sub,mat);
+[resp,UD,dots] = Stair_On_Screen(info,trl,sub,mat,RDK,const,circle1);
 
 
 
 if sub.treino ~= 's'
     UD_analysis(UD,resp,sub)
-    save(fullfile(sprintf('%s/Data/S%d/Staircase/%s', pc_path, sub.id_num), [info_file.name]), 'gabor', 'info', 'mask','mat','sub','trl','resp','UD', '-v7.3');
+   % save(fullfile(sprintf('%s/Data/S%d/Staircase/%s', pc_path, sub.id_num), [info_file.name]), 'gabor', 'info', 'mask','mat','sub','trl','resp','UD', '-v7.3');
 end
+

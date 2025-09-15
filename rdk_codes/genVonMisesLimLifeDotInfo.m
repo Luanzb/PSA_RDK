@@ -22,14 +22,14 @@ dinf.num = const.numDots;
 % Set dot colors based on const.dotColorType
 if const.dotColorType == 1
     % All cyan dots - same format as white (0-255 range)
-    dinf.col = repmat([88 198 219], dinf.num, 1)';
+    dinf.col = repmat(const.dotcolor1a, dinf.num, 1)';
 elseif const.dotColorType == 2
     % All pink dots - same format as white (0-255 range)
-    dinf.col = repmat([255 120 200], dinf.num, 1)';
+    dinf.col = repmat(const.dotcolor2a, dinf.num, 1)';
 else
     % Mixed cyan and pink dots - same format as white (0-255 range)
-    cyan_color = [88 198 219];
-    pink_color = [255 120 200];
+    cyan_color = const.dotcolor1a;
+    pink_color = const.dotcolor2a;
     color_choice = round(rand(1,dinf.num));
     dinf.col = zeros(3,dinf.num);
     dinf.col(:,color_choice==0) = repmat(cyan_color',1,sum(color_choice==0));

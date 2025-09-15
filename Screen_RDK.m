@@ -53,7 +53,7 @@ while trial <= info.ntrials
 
     % Create only distractor stimulus
     const.dotColorType = 1; % green/cyan
-    [dots] = draw_rdk(const, RDK, trl.coherence(trial,1));
+    [dots] = draw_rdk(const, RDK, 1);
 
     const.dotColorType = 2; % red/pink
     [dots2] = draw_rdk(const,RDK,trl.coherence(trial,2));

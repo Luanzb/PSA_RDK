@@ -79,10 +79,10 @@ info.cue_length_px = round(dva2pix(info.scr_dist_cm, info.scr_xsize_cm, info.scr
 %% Tamanho, velocidade e Posicoes dos RDK
 
 % tamnho do estimulo RDK
-RDK.size_dva = 5;
+RDK.size_dva = 3;
 RDK.size_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,RDK.size_dva);
 % tamanho dos pontos do RDK
-RDK.size_dot_dva = .17;
+RDK.size_dot_dva = .06;
 RDK.size_dot_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,RDK.size_dot_dva);
 
 % velocidade de movimento dos pontos por segundo. uma velocidade de 5 dva,
@@ -91,7 +91,7 @@ RDK.speed_dot = 3; % 5
 RDK.speed_dot_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,RDK.speed_dot);
 
 % RDK Eccentricity
-RDK.EccDVA = 8;
+RDK.EccDVA = 6;
 RDK.Ecc = round(dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,RDK.EccDVA));
 
 % RDK coordinates on the left and right side from FP
@@ -108,9 +108,9 @@ const.stimRad   = RDK.rad;          % item size
 % filled dot
 RDK.dottype = 2;
 
-RDK.dotcolor1a = [88 198 219]/255;  % lab2rgb(dotcolor1); % Green
+const.dotcolor1a = [0 1 0]; %[88 198 219]/255;  % lab2rgb(dotcolor1); % Green
 
-RDK.dotcolor2a = [255 120 200]/255;  % lab2rgb(dotcolor2); % Red
+const.dotcolor2a = [1 0 0]; %[255 120 200]/255;  % lab2rgb(dotcolor2); % Red
 
 %% General settings
 % Ajust screen size and specify item positions and trial timing
@@ -130,20 +130,20 @@ const.max_fr         = round(trl.trial_dur_t/const.frame_dur);
 
 % See genVonMisesDotInfo for details
 const.dotRadSize = RDK.size_dot_pix;   %%%% GOOD PROXY? %%%
-const.theta_noise = 90;
+const.theta_noise = 100;
 const.kappa_noise = 0;
 
 const.numDots = 25;
 const.dotSpeed_pix = RDK.speed_dot_pix;   % dot speed [pix/dec] %%%% GOOD PROXY? %%%
-const.sigDotSpeedMulti = 3; % acceleration (put 1 for without)
+const.sigDotSpeedMulti = 4; % acceleration (put 1 for without)
 
-const.durMinLife = 0.200;           const.numMinLife = (round(const.durMinLife/const.frame_dur));
-const.numMeanLife = 0.250;          const.numMeanLife = (round(const.numMeanLife/const.frame_dur));
+const.durMinLife = 0.1;           const.numMinLife = (round(const.durMinLife/const.frame_dur));
+const.numMeanLife = 0.150;          const.numMeanLife = (round(const.numMeanLife/const.frame_dur));
 
 %% Define circle parameters (dashed circle around the RDK)
 
 circle1.ecc_dva = RDK.EccDVA; % 8 degrees of visual angle
-circle1.rad_dva = 2.6;     % 4 degrees of visual angle
+circle1.rad_dva = 1.7;     % 4 degrees of visual angle
 
 % Convert DVA to pixels
 circle1.ecc_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,circle1.ecc_dva);

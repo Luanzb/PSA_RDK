@@ -1,6 +1,6 @@
 function [sub,info] = Inputsubject2(sub,info)
 
-start_value = string(info.UD_start_value); step_size = string(info.UD_step_size_down);
+start_value = num2str(info.UD_start_value); step_size = num2str(info.UD_step_size_down);
 if sub.ses_num == 1
     prompt = {...
         'Numero voluntario',...
