@@ -1,11 +1,15 @@
-function [resp,UD,dots] = Stair_On_Screen(info,trl,sub,mat,RDK,const,circle1)
+function [UD,UD2, time,dots] = Stair_On_Screen(info,trl,sub,mat,RDK,const,circle1)
 % First column = Hits;
 % Second column = False Alarms
 % Third column =  Correct rejections
 % fourth column = Miss
-resp = zeros(60,4);
+% resp = zeros(80,4);
 
-nFrames = const.max_fr;
+ResponsePixx('Close');
+ResponsePixx('Open');
+
+
+%nFrames = const.max_fr;
 %% Screen setup
 
 FlushEvents;
@@ -25,44 +29,168 @@ info.gray_idx = info.white_idx/2;
 
 %%
 
+% Eyetracking general setup
+EyelinkInit(0);
+Eyelink('OpenFile', 'RDKeye');       % Open temporary Eyelink file
+
+% Select which events are saved in the EDF file - include everything just in case
+Eyelink('Command', 'file_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,MESSAGE,BUTTON,INPUT');
+% Select which events are available online for gaze-contingent experiments - include everything just in case
+Eyelink('Command', 'link_event_filter = LEFT,RIGHT,FIXATION,SACCADE,BLINK,BUTTON,FIXUPDATE,INPUT');
+% Select which sample data is saved in EDF file or available online - include everything just in case
+Eyelink('Command', 'file_sample_data = LEFT,RIGHT,GAZE,HREF,RAW,AREA,HTARGET,GAZERES,BUTTON,STATUS,INPUT');
+Eyelink('Command', 'link_sample_data = LEFT,RIGHT,GAZE,GAZERES,AREA,HTARGET,STATUS,INPUT');
+
+if sub.eye == 'E'
+    eye_used = 1;
+    Eyelink('Command', 'active_eye = LEFT');
+elseif sub.eye == 'D'
+    eye_used = 2;
+    Eyelink('Command', 'active_eye = RIGHT');
+end
+
+el = EyelinkInitDefaults(win);
+% Set calibration/validation/drift-check(or drift-correct) size as well as background and target colors
+% It is important that this background colour is similar to that of the stimuli to prevent large luminance-based
+% pupil size changes (which can cause a drift in the eye movement data)
+el.calibrationtargetsize = 1.5;               % Outer target size as percentage of the screen
+el.calibrationtargetwidth = 0.3;            % Inner target size as percentage of the screen
+el.backgroundcolour = info.black_idx;        % RGB black
+el.calibrationtargetcolour = [1 1 1];       % RGB white
+% Set "Camera Setup" instructions text colour so it is different from background colour
+el.msgfontcolour = [0 170 0]/255;                 % RGB black
+
+% Use an image file instead of the default calibration bull's eye targets
+% (commenting out the following two lines will use default targets)
+% el.calTargetType = 'image';
+% el.calImageTargetFilename = [pwd '/' 'Images/fixTargetXXX.jpg'];
+
+% Set calibration beeps (0 = sound off, 1 = sound on)
+el.targetbeep = 0;                          % Sound a beep when a target is presented
+el.feedbackbeep = 0;                        % Sound a beep after calibration or drift check/correction
+
+EyelinkUpdateDefaults(el);
+
+Eyelink('Command', 'screen_pixel_coords = %ld %ld %ld %ld', 0, 0, info.scr_xsize-1, info.scr_ysize-1);
+Eyelink('Message', 'DISPLAY_COORDS %ld %ld %ld %ld', 0, 0, info.scr_xsize-1, info.scr_ysize-1);
+
+% Set number of calibration/validation dots and spread: horizontal-only(H) or horizontal-vertical(HV) as H3, HV3, HV5, HV9 or HV13
+Eyelink('Command', 'calibration_type = HV9');           % Horizontal-vertical 9-points
+Eyelink('command', 'generate_default_targets = NO');    % NO = Custom calibration
+% Modify calibration and validation target locations
+Eyelink('command', 'calibration_samples = 10');
+Eyelink('command', 'calibration_sequence = 0,1,2,3,4,5,6,7,8,9');
+Eyelink('command', 'calibration_targets = %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d',...
+    960,540, 960,205, 960,875, 442,540, 1478,540, 442,205, 1478,205, 442,875, 1478,875);
+Eyelink('command', 'validation_samples = 10');
+Eyelink('command', 'validation_sequence = 0,1,2,3,4,5,6,7,8,9');
+Eyelink('command', 'validation_targets = %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d %d,%d',...
+    960,540, 960,205, 960,875, 442,540, 1478,540, 442,205, 1478,205, 442,875, 1478,875);
+
+% Allow a supported EyeLink Host PC button box to accept calibration or drift-check/correction targets via button 5
+Eyelink('Command', 'button_function 5 "accept_target_fixation"');
+Eyelink('Command', 'clear_screen 0');       % Clear Host PC display from any previus drawing
+
+%%
+
 topPriorityLevel = MaxPriority(win);
 Priority(topPriorityLevel);
 HideCursor;
 ListenChar(-1);
 
+% Put EyeLink Host PC in Camera Setup mode for participant setup/calibration
+EyelinkDoTrackerSetup(el);
+
+% Create central square fixation window
+fix_win_center = [-info.roi_fix_pix -info.roi_fix_pix info.roi_fix_pix info.roi_fix_pix];
+fix_win_center = CenterRect(fix_win_center, info.scr_rect);
+
 %%
 
 [UD] = UD_setup(info);
+[UD2] = UD2_setup(info);
 
+counterUD = 0;
+counterUD2 = 0;
+
+switchedToMain = false;
+info.switchTrial = 0;
+
+switchedToMain2 = false;
+info.switchTrial2 = 0;
 
 try
     abort = false;
 
     for trial = 1:info.ntrials
 
-        if mat.matrix(trial,4) == 0
-            [RDK] = UD_alpha_update(RDK,UD);
+
+        if sub.treino ~= 's'
+            if mat.matrix(trial,1) == 1
+                counterUD = counterUD + 1;
+                [trl] = UD_alpha_update(trl,UD);
+                 [trl.new_sat1] = adjust_chroma(trl.new_sat11,trl.baseline_green_lab);
+            else
+                counterUD2 = counterUD2 + 1;
+                [trl] = UD2_alpha_update(trl,UD2);
+                 [trl.new_sat2] = adjust_chroma(trl.new_sat22,trl.baseline_red_lab);
+            end
+        else
+
+            if info.colorsat == 1
+                trl.new_sat1 = trl.dotcolor1_high_sat;
+                trl.new_sat2 = trl.dotcolor2_high_sat;
+            else
+                if counterUD == 0
+                    % 1Up/1Down PARAMETERS GREEN
+                    info.UD_step_size_down = .02; %log10(1 + .10); % exponential steps of 20% in log10
+                    info.UD_step_size_up = info.UD_step_size_down;
+                    info.UD_start_value = log10(100); % .3
+                    info.UD_xmax = log10(100);
+                    info.UD_xmin = log10(70);
+
+                    [UD] = UD_setup(info);
+                end
+
+                if counterUD2 == 0
+                    % 1Up/1Down PARAMETERS RED
+                    info.UD2_step_size_down = .02; %log10(1 + .10); % exponential steps of 20% in log10
+                    info.UD2_step_size_up = info.UD2_step_size_down;
+                    info.UD2_start_value = log10(100); % .3
+                    info.UD2_xmax = log10(100);
+                    info.UD2_xmin = log10(70);
+
+                    [UD2] = UD2_setup(info);
+                end
+
+
+                if mat.matrix(trial,1) == 1
+                    counterUD = counterUD + 1;
+                    [trl] = UD_alpha_update(trl,UD);
+                    [trl.new_sat1] = adjust_chroma(trl.new_sat11,trl.baseline_green_lab);
+
+                else
+                    counterUD2 = counterUD2 + 1;
+                    [trl] = UD2_alpha_update(trl,UD2);
+                    [trl.new_sat2] = adjust_chroma(trl.new_sat22,trl.baseline_red_lab );
+                end
+            end
         end
 
-        RDK.dirSignal = trl.targ_ori(trial);
-        % Trial timing (in frames)
-        const.start_test_fr  = trl.targ_on(trial);    % test presentation start
-        const.end_test_fr    =  round((trl.targ_on(trial)*const.frame_dur)/const.frame_dur)+const.test_dur_fr-1;  % trl.targ_off(trial);     % test presentation end
+        const.max_fr = trl.targ_off(trial);
 
         % Create only distractor stimulus
-        const.dotColorType = 1; % green/cyan
-        [dots] = draw_rdk(const, RDK, trl.coherence(trial,1));
 
-        const.dotColorType = 2; % red/pink
-        [dots2] = draw_rdk(const,RDK,trl.coherence(trial,2));
+        [dots]  = draw_rdk(const, RDK,0); % green left
+        [dots2] = draw_rdk(const, RDK,0); % red left
+        [dots3] = draw_rdk(const, RDK,0); % green right
+        [dots4] = draw_rdk(const, RDK,0); % red right
 
-        % Create only distractor stimulus
-        const.dotColorType = 1; % green/cyan
-        [dots3] = draw_rdk(const, RDK, trl.coherence(trial,3));
 
-        const.dotColorType = 2; % red/pink
-        [dots4] = draw_rdk(const,RDK,trl.coherence(trial,4));
 
+        FIX = 2;
+
+        Eyelink('SetOfflineMode'); % Put tracker in idle/offline mode before drawing Host PC graphics and before recording
 
 
         if trial == 1
@@ -78,42 +206,160 @@ try
 
             Screen('Flip', win);
 
-            respToBeMade = true;
-            while respToBeMade
-                [~,~, keyCode] = KbCheck;
-                if keyCode(info.escapeKey)
-                    ShowCursor;
-                    sca;
-                    return
-                elseif keyCode(info.return)
-                    respToBeMade = false;
+
+            ResponsePixx('StartNow', 1, [0 0 0 0 1], 1);
+            while 1
+                [buttons, ~, ~] = ResponsePixx('GetLoggedResponses', 1, 1, 2000);
+                if ~isempty(buttons)
+                    if buttons(1,5) == 1         % White button
+                        break;
+                    end
                 end
+            end
+            ResponsePixx('StopNow', 1, [0 0 0 0 0], 0);
+
+            if abort == false
+                EyelinkDoDriftCorrection(el, [info.scr_xcenter, info.scr_ycenter]);      % Run eyetracker drift correction
+                WaitSecs(1);
             end
 
         end
 
+        if abort == true
+            break;
+        end
+
+        Eyelink('Command', 'clear_screen 0');       % Clear Host PC display from any previus drawing
+        Eyelink('ImageTransfer', '/home/kaneda/Documents/GitHub/PSA_RDK/Images/trl_on.bmp', 0, 0, 0, 0, 0, 0);
+        Eyelink('StartRecording');
+        % Eyelink('Command', 'record_status_message "TRIAL %d/%d"', session, size(info.ntrials,1));
+
+        Screen('BlendFunction', win, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        Screen('DrawDots', win, [0 0], info.fp_size_pix, info.white_idx, [info.scr_xcenter info.scr_ycenter], RDK.dottype);
+
+        % Draw dashed circle around left stimulus
+        drawDashedCircle(win, circle1.leftCirclePos(1,1), circle1.leftCirclePos(1,2), ...
+            circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
+
+        % Draw dashed circle around right stimulus
+        drawDashedCircle(win, circle1.rightCirclePos(1,1), circle1.rightCirclePos(1,2), ...
+            circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
+
+        time.fp_on(trial) = Screen('Flip', win);
+
+        % current_display = Screen('GetImage',win);
+        % imwrite(current_display, 'trl_on.png');
+
+        % Wait until participant is fixating for info.fix_dur_sec
+        while 1
+            damn = Eyelink('CheckRecording');
+            if(damn ~= 0)
+                break;
+            end
+            if Eyelink('NewFloatSampleAvailable') > 0
+                evt = Eyelink('NewestFloatSample');                     % Get the sample in the form of an event structure
+                x_gaze = evt.gx(eye_used);                              % Get current gaze position from sample
+                y_gaze = evt.gy(eye_used);
+                if inFixWindow(x_gaze, y_gaze, fix_win_center)          % If gaze sample is within fixation window (see inFixWindow function below)
+                    if (GetSecs - time.fp_on(trial)) >= info.fix_dur_sec     % If gaze duration >= minimum fixation window time (fxateTime)
+                        break;
+                    end
+                elseif ~inFixWindow(x_gaze, y_gaze, fix_win_center)     % If gaze sample is not within fixation window
+                    [time.fp_on(trial)] = GetSecs;                         % Reset fixation window timer
+                end
+            end
+        end
 
         tic
-        for frame = 1:nFrames % TRIAL WILL END 300 MS AFTER TARG OFF (mask off)
+        for frame = 1:trl.targ_off(trial)+24
 
+            color11 = trl.color1_lsat;
+            color22 = trl.color2_lsat;
+            color33 = trl.color3_lsat;
+            color44 = trl.color4_lsat;
+
+
+
+            if Eyelink('NewFloatSampleAvailable') > 0
+                evt = Eyelink('NewestFloatSample');                     % Get the sample in the form of an event structure
+                x_gaze = evt.gx(eye_used);                              % Get current gaze position from sample
+                y_gaze = evt.gy(eye_used);
+            end
 
             Screen('BlendFunction', win, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
             Screen('DrawDots', win, [0 0], info.fp_size_pix, info.white_idx, [info.scr_xcenter info.scr_ycenter], RDK.dottype);
 
-            Screen('DrawDots',win, round(dots{1}(1).posi{frame})', dots{1}(1).siz, dots{1}(1).col, RDK.coordL,2);
-            Screen('DrawDots',win, round(dots2{1}(1).posi{frame})', dots2{1}(1).siz,dots2{1}(1).col, RDK.coordL,2);
 
-            Screen('DrawDots',win, round(dots3{1}(1).posi{frame})', dots3{1}(1).siz, dots3{1}(1).col, RDK.coordR,2);
-            Screen('DrawDots',win, round(dots4{1}(1).posi{frame})', dots4{1}(1).siz, dots4{1}(1).col, RDK.coordR,2);
 
+
+            if frame <= trl.targ_off(trial)
+
+                if frame >= trl.targ_on(trial)
+
+                    if mat.matrix(trial,1) == 1 && mat.matrix(trial,2) == 1
+
+                        if mat.matrix(trial,3) == 2 % lower quadrant
+                            col_idx = dots{1,1}(1).posi{1,frame}(:,2) > 0;
+                            color11(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
+                        else
+                            col_idx = dots{1,1}(1).posi{1,frame}(:,2) < 0; % upper quadrant
+                            color11(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
+                        end
+
+                    elseif mat.matrix(trial,1) == 2 && mat.matrix(trial,2) == 1
+
+                        if mat.matrix(trial,3) == 2 % lower quadrant
+                            col_idx = dots2{1,1}(1).posi{1,frame}(:,2) > 0;
+                            color22(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
+                        else
+                            col_idx = dots2{1,1}(1).posi{1,frame}(:,2) < 0;
+                            color22(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
+                        end
+
+                    elseif mat.matrix(trial,1) == 1 && mat.matrix(trial,2) == 2
+
+                        if mat.matrix(trial,3) == 2 % lower quadrant
+                            col_idx = dots3{1,1}(1).posi{1,frame}(:,2) > 0;
+                            color33(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
+                        else
+                            col_idx = dots3{1,1}(1).posi{1,frame}(:,2) < 0;
+                            color33(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
+                        end
+
+                    elseif mat.matrix(trial,1) == 2 && mat.matrix(trial,2) == 2
+
+                        if mat.matrix(trial,3) == 2 % lower quadrant
+
+                            col_idx = dots4{1,1}(1).posi{1,frame}(:,2) > 0;
+                            color44(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
+                        else
+                            col_idx = dots4{1,1}(1).posi{1,frame}(:,2) < 0;
+                            color44(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
+                        end
+                    end
+
+                else
+                    color11 = trl.color1_lsat;
+                    color22 = trl.color2_lsat;
+                    color33 = trl.color3_lsat;
+                    color44 = trl.color4_lsat;
+                end
+
+                Screen('DrawDots',win, round(dots{1}(1).posi{frame})', dots{1}(1).siz, color11, RDK.coordL,2);
+                Screen('DrawDots',win, round(dots2{1}(1).posi{frame})', dots2{1}(1).siz,color22, RDK.coordL,2);
+
+                Screen('DrawDots',win, round(dots3{1}(1).posi{frame})', dots3{1}(1).siz, color33, RDK.coordR,2);
+                Screen('DrawDots',win, round(dots4{1}(1).posi{frame})', dots4{1}(1).siz, color44, RDK.coordR,2);
+
+            end
 
             % Draw dashed circle around left stimulus
             drawDashedCircle(win, circle1.leftCirclePos(1,1), circle1.leftCirclePos(1,2), ...
-                circle1.rad_pix+5, circle1.Color, circle1.lineWidth, circle1.linegap);
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
 
             % Draw dashed circle around right stimulus
             drawDashedCircle(win, circle1.rightCirclePos(1,1), circle1.rightCirclePos(1,2), ...
-                circle1.rad_pix+5, circle1.Color, circle1.lineWidth, circle1.linegap);
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
 
 
             Screen('BlendFunction',win,GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
@@ -128,7 +374,33 @@ try
             end
 
 
-            Screen('Flip', win);
+            if frame == 1
+                time.trl_on(trial) = Screen('Flip', win);
+            elseif frame == trl.cue_on(trial,1)
+                time.cue_on(trial) = Screen('Flip', win);
+            elseif frame == trl.cue_off(trial,1)
+                time.cue_off(trial) = Screen('Flip', win);
+            elseif frame == trl.targ_on(trial,1)
+                time.targ_on(trial) = Screen('Flip', win);
+            elseif frame == trl.targ_off(trial,1)
+                time.targ_off(trial) = Screen('Flip', win);
+            elseif frame == trl.targ_off(trial)+24
+                time.trl_off(trial) = Screen('Flip', win);
+            else
+                Screen('Flip', win);
+            end
+
+            % if frame >= trl.targ_on(trial)-8
+            %     WaitSecs(.05);
+            % end
+
+            if frame >= 1 && frame <= trl.targ_off(trial,1)
+                if ~inFixWindow(x_gaze,y_gaze,fix_win_center)
+                    if FIX == 2
+                        FIX = 3;
+                    end
+                end
+            end
 
         end
 
@@ -140,89 +412,180 @@ try
         if mat.matrix(trial,2) == 1
             % Draw dashed circle around left stimulus
             drawDashedCircle(win, circle1.leftCirclePos(1,1), circle1.leftCirclePos(1,2), ...
-                circle1.rad_pix+5, circle1.Color, circle1.lineWidth*2, circle1.linegap);
+                circle1.rad_pix, circle1.Color, circle1.lineWidth*2, circle1.linegap);
             % Draw dashed circle around right stimulus
             drawDashedCircle(win, circle1.rightCirclePos(1,1), circle1.rightCirclePos(1,2), ...
-                circle1.rad_pix+5, circle1.Color, circle1.lineWidth, circle1.linegap);
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
         else
             % Draw dashed circle around left stimulus
             drawDashedCircle(win, circle1.leftCirclePos(1,1), circle1.leftCirclePos(1,2), ...
-                circle1.rad_pix+5, circle1.Color, circle1.lineWidth, circle1.linegap);
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
             % Draw dashed circle around right stimulus
             drawDashedCircle(win, circle1.rightCirclePos(1,1), circle1.rightCirclePos(1,2), ...
-                circle1.rad_pix+5, circle1.Color, circle1.lineWidth*2, circle1.linegap);
+                circle1.rad_pix, circle1.Color, circle1.lineWidth*2, circle1.linegap);
         end
 
         Screen('Flip', win);
 
         toc
 
-        respToBeMade = true;
-        while respToBeMade
-            [~,~, keyCode] = KbCheck;
-            if keyCode(info.escapeKey)
-                ShowCursor;
-                sca;
-                return
-            elseif keyCode(info.leftKey) % left arrow: saw the target
-                response = 1;
-                respToBeMade = false;
-            elseif keyCode(info.rightKey) % right arrow: didn't see the target
-                response = 0;
-                respToBeMade = false;
-            end
-        end
 
-        if response == 1
-
-            respToBeMade = true;
-            while respToBeMade
-                [~,~, keyCode] = KbCheck;
-                if keyCode(info.escapeKey)
-                    ShowCursor;
-                    sca;
-                    return
-                elseif keyCode(info.uparrow) % up arrow:
+        ResponsePixx('StartNow', 1, [0 1 0 1 0], 1);
+        while 1
+            [buttons, ~, ~] = ResponsePixx('GetLoggedResponses', 1, 1, 2000);
+            if ~isempty(buttons)
+                if buttons(1,2) == 1         % Yellow button up
                     response = 1;
-                    respToBeMade = false;
-                elseif keyCode(info.downarrow) % down arrow: 
-                    response = 0;
-                    respToBeMade = false;
+                    break;
+                elseif buttons(1,4) == 1     % Blue button down
+                    response = 2;
+                    break;
+                elseif buttons(1,1) == 1         % Red button
+                    abort = true;
+                    break;
                 end
             end
+        end
+        ResponsePixx('StopNow', 1, [0 0 0 0 0], 0);
 
+
+        % abort experiment training if abort is true. for the staircase per
+        % se, it is not possible to abort during the experiment.
+        if sub.treino == 's'
+            if abort == true
+                break;
+            end
         end
 
 
-        % Colect answer for each trial.
-        if response == 1 && mat.matrix(trial,4) == 0 % Hit
-            resp(trial,1) = 1;
-        elseif response == 1 && mat.matrix(trial,4) == 1 % False alarm
-            resp(trial,2) = 1;
-        elseif response == 0 && mat.matrix(trial,4) == 1 % Correct Rejection
-            resp(trial,3) = 1;
-        elseif response == 0 && mat.matrix(trial,4) == 0 % Miss
-            resp(trial,4) = 1;
+        % during staircase training, fixation dot turns red/green if target
+        % present or blue if absent at the end of each trial.
+        if sub.treino == 's'
+
+                color1 = trl.dotcolor1_reduc_sat;
+                color2 = trl.dotcolor2_reduc_sat;
+
+
+            Screen('BlendFunction', win, GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+            if mat.matrix(trial,1) == 1 && mat.matrix(trial,3) == 1 % green up
+                Screen('DrawLine', win, color1, info.scr_xcenter,info.scr_ycenter ...
+                    ,info.scr_xcenter,info.scr_ycenter - info.cue_length_px, info.cue_width_px);
+            elseif mat.matrix(trial,1) == 1 && mat.matrix(trial,3) == 2 % green down
+                Screen('DrawLine', win, color1, info.scr_xcenter,info.scr_ycenter ...
+                    ,info.scr_xcenter,info.scr_ycenter + info.cue_length_px, info.cue_width_px);
+            elseif mat.matrix(trial,1) == 2 && mat.matrix(trial,3) == 1 % red up
+                Screen('DrawLine', win, color2, info.scr_xcenter,info.scr_ycenter ...
+                    ,info.scr_xcenter,info.scr_ycenter - info.cue_length_px, info.cue_width_px);
+            elseif mat.matrix(trial,1) == 2 && mat.matrix(trial,3) == 2 % red down
+                Screen('DrawLine', win, color2, info.scr_xcenter,info.scr_ycenter ...
+                    ,info.scr_xcenter,info.scr_ycenter + info.cue_length_px, info.cue_width_px);
+            end
+            Screen('DrawDots', win, [0 0], info.fp_size_pix, [1 1 1], [info.scr_xcenter info.scr_ycenter], RDK.dottype);
+
+            % Draw dashed circle around left stimulus
+            drawDashedCircle(win, circle1.leftCirclePos(1,1), circle1.leftCirclePos(1,2), ...
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
+
+            % Draw dashed circle around right stimulus
+            drawDashedCircle(win, circle1.rightCirclePos(1,1), circle1.rightCirclePos(1,2), ...
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
+
+            Screen('Flip', win); WaitSecs(0.4);
         end
 
 
-        % update staircase value if the current trial had a target
-        if mat.matrix(trial,4) == 0
-            if response == 1
+        if FIX == 3
+            Screen('DrawDots', win, [0 0], info.fp_size_pix, [1 0.65 0], [info.scr_xcenter info.scr_ycenter], RDK.dottype); %  [1 0.65 0],
+            % Draw dashed circle around left stimulus
+            drawDashedCircle(win, circle1.leftCirclePos(1,1), circle1.leftCirclePos(1,2), ...
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
+
+            % Draw dashed circle around right stimulus
+            drawDashedCircle(win, circle1.rightCirclePos(1,1), circle1.rightCirclePos(1,2), ...
+                circle1.rad_pix, circle1.Color, circle1.lineWidth, circle1.linegap);
+
+            Screen('Flip', win); WaitSecs(0.3);
+        end
+
+
+        % if sub.treino ~= 's'
+        if mat.matrix(trial,1) == 1
+            if isequal(response, mat.matrix(trial,3))
                 outcome = 1;
             else
                 outcome = 0;
             end
 
+
             [info,UD] = UD_update(info,UD,outcome);
 
+
+            % Check if we should switch to 1up/2down after first error
+            if ~switchedToMain && outcome == 0
+                time.switchTrial = counterUD;
+
+                fprintf('Trial %d: First error - switching to 1up/2down\n', counterUD);
+
+                % Change the rule to 1up/2down
+                UD.up = 1;
+                UD.down = 3;
+
+                switchedToMain = true;
+            end
+
+        else
+
+            if isequal(response, mat.matrix(trial,3))
+                outcome = 1;
+            else
+                outcome = 0;
+            end
+
+
+            [info,UD2] = UD2_update(info,UD2,outcome);
+
+
+            % Check if we should switch to 1up/2down after first error
+            if ~switchedToMain2 && outcome == 0
+                time.switchTrial2 = counterUD2;
+
+                fprintf('Trial %d: First error - switching to 1up/2down\n', counterUD2);
+
+                % Change the rule to 1up/2down
+                UD2.up = 1;
+                UD2.down = 3;
+
+                switchedToMain2 = true;
+            end
+
+
         end
+        %  end
+
 
 
     end
 
     Screen('CloseAll');
+    ResponsePixx('Close');
 
+    Eyelink('CloseFile');
+
+    ntimes = 1;
+    while ntimes <= 10
+        status = Eyelink('ReceiveFile');
+        if status > 0
+            break
+        end
+        ntimes = ntimes + 1;
+    end
+    if status <= 0
+        warning('EyeLink data has not been saved properly.');
+    else
+        fprintf('EyeLink data saved properly on attempt %d.\n',ntimes);
+    end
+    Eyelink('ShutDown');
 
 
 
@@ -239,5 +602,9 @@ catch
 
 end
 
+    function fix = inFixWindow(mx,my,fix_window)
+        fix = mx > fix_window(1) &&  mx <  fix_window(3) && ...
+            my > fix_window(2) && my < fix_window(4) ;
+    end
 
 end

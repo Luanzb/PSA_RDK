@@ -1,25 +1,22 @@
 
-git_path = 'C:/Users/activ/OneDrive/Documentos/GitHub/PSA_RDK';
+git_path = '/home/kaneda/Documents/GitHub/PSA_RDK';
 addpath(genpath(git_path));
 
-pc_path = 'C:/Users/activ/OneDrive/Documentos/Projects/PSA_RDK';
+pc_path = '/home/kaneda/Documents/Projects/PSA_RDK';
 addpath(genpath(pc_path));
 
 % Ask subject number
 answer = inputdlg({'Número sujeito','Sessão'}, '', [1 25]);
 sub.id = answer{1}; sub.id_num = str2double(answer{1});
-sub.ses = answer{2}; sub.ses_num = str2double(answer{2}); 
+sub.ses = answer{2}; sub.ses_num = str2double(answer{2});
 
 %% INFORMAÇÕES SOBRE O TECLADO
 KbName('UnifyKeyNames');
-info.escapeKey = KbName('ESCAPE');
-info.leftKey = KbName('LeftArrow');
-info.rightKey = KbName('RightArrow');
-info.uparrow = KbName('UpArrow');
-info.downarrow = KbName('DownArrow');
-info.s         = KbName('S');
-info.n         = KbName('N');
 info.return = KbName('return');
+info.button1 = KbName('1!');
+info.button2 = KbName('2@');
+info.button3 = KbName('3#');
+info.button4 = KbName('4$');
 
 %% Screen setup
 Screen('Preference', 'SyncTestSettings', 0.01, 50, 0.25);
@@ -32,7 +29,7 @@ Screen('Preference', 'SkipSyncTests', 1);
 rng('shuffle')
 
 screens = Screen('Screens');% Get the screen numbers.
-info.scr_num = screens(3);% draw to the externalscreen.
+info.scr_num = screens(1);% draw to the externalscreen.
 
 % Define black and white (white== 1 and black, 0).
 info.white_idx = WhiteIndex(info.scr_num);
@@ -47,7 +44,7 @@ info.scr_ifi = Screen('GetFlipInterval', win);
 
 sca; clc;
 
-info.ntrials = 60;
+info.ntrials = 160;
 
 %% Get the size of the screen window in pixels
 
@@ -65,13 +62,17 @@ info.scr_ysize = info.scr_rect(4);
 info.scr_rrate = round(1/info.scr_ifi);     % Refresh rate
 info.scr_dist_cm = 57;          % Viewing distance from screen (cm)
 
+% parameters for fixation period before every trial onset.
+info.fix_dur_sec = 0.5;         % Duration of fixation at ROI to start trial in secs
+info.roi_fix_dva = 2;           % size of fixation window ROI
+info.roi_fix_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,info.roi_fix_dva);
 %% Infos Fixation Dot
 info.fp_size_dva = 0.3;        % fixation Dot diameter
 info.fp_size_pix = round(dva2pix(info.scr_dist_cm, info.scr_xsize_cm, info.scr_xsize, info.fp_size_dva));
 
 %% Infos Saccade_Cue
 info.cue_width_dva = 0.15; % saccade cue width in dva
-info.cue_length_dva = 0.7; % saccade cue length in dva
+info.cue_length_dva = 0.55; % saccade cue length in dva
 
 info.cue_width_px = round(dva2pix(info.scr_dist_cm, info.scr_xsize_cm, info.scr_xsize, info.cue_width_dva));% saccade cue width converted to pixels
 info.cue_length_px = round(dva2pix(info.scr_dist_cm, info.scr_xsize_cm, info.scr_xsize, info.cue_length_dva)); % saccade cue length converted to pixels
@@ -79,16 +80,18 @@ info.cue_length_px = round(dva2pix(info.scr_dist_cm, info.scr_xsize_cm, info.scr
 %% Tamanho, velocidade e Posicoes dos RDK
 
 % tamnho do estimulo RDK
-RDK.size_dva = 3;
+RDK.size_dva = 4;
 RDK.size_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,RDK.size_dva);
 % tamanho dos pontos do RDK
-RDK.size_dot_dva = .06;
+RDK.size_dot_dva = .2;
 RDK.size_dot_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,RDK.size_dot_dva);
 
 % velocidade de movimento dos pontos por segundo. uma velocidade de 5 dva,
 % equvale a um deslocamento de XX pixels por segundo.
-RDK.speed_dot = 3; % 5
+RDK.speed_dot = 1.5; % 5
 RDK.speed_dot_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,RDK.speed_dot);
+
+RDK.kappa = 100;
 
 % RDK Eccentricity
 RDK.EccDVA = 6;
@@ -100,17 +103,7 @@ RDK.coordR = [info.scr_xcenter+RDK.Ecc info.scr_ycenter];
 
 % Random dot kinematograms
 RDK.rad         = RDK.size_pix/2;               % item radius
-%RDK.dirSignal   = 45;                % test item motion direction (0:right, 90:up, 180:left, 270:down)
-%RDK.kappa       = 100;               % test item motion coherence
 const.stimRad   = RDK.rad;          % item size
-
-%% Color RDKs
-% filled dot
-RDK.dottype = 2;
-
-const.dotcolor1a = [0 1 0]; %[88 198 219]/255;  % lab2rgb(dotcolor1); % Green
-
-const.dotcolor2a = [1 0 0]; %[255 120 200]/255;  % lab2rgb(dotcolor2); % Red
 
 %% General settings
 % Ajust screen size and specify item positions and trial timing
@@ -119,14 +112,9 @@ const.dotcolor2a = [1 0 0]; %[255 120 200]/255;  % lab2rgb(dotcolor2); % Red
 const.pos = [960 540]; % it will be changed to the right and left side.
 
 % Temporal configurations
-trl.trial_dur_t = 1.4;                        % trial duration (in seconds)
-const.frame_dur = 1/60;                     % frame duration in seconds (e.g. 1/60 for screen refresh rate of 60 Hz)
-
-% Trial timing (in frames)
-RDK.test_dur_t      = 0.2;              % test presentation duration (seconds)
-const.start_fr       = 1;                                                           % trial start
-const.test_dur_fr    = round(RDK.test_dur_t/const.frame_dur);                       % test presentation duration
-const.max_fr         = round(trl.trial_dur_t/const.frame_dur);  
+%trl.trial_dur_t = 1.4;                        % trial duration (in seconds)
+const.frame_dur = 1/info.scr_rrate;                     % frame duration in seconds (e.g. 1/60 for screen refresh rate of 60 Hz)
+const.start_fr = 1; 
 
 % See genVonMisesDotInfo for details
 const.dotRadSize = RDK.size_dot_pix;   %%%% GOOD PROXY? %%%
@@ -135,15 +123,57 @@ const.kappa_noise = 0;
 
 const.numDots = 25;
 const.dotSpeed_pix = RDK.speed_dot_pix;   % dot speed [pix/dec] %%%% GOOD PROXY? %%%
-const.sigDotSpeedMulti = 4; % acceleration (put 1 for without)
+const.sigDotSpeedMulti = 1; % acceleration (put 1 for without)
 
-const.durMinLife = 0.1;           const.numMinLife = (round(const.durMinLife/const.frame_dur));
+const.durMinLife = 0.083;           const.numMinLife = (round(const.durMinLife/const.frame_dur)); % 0.083
 const.numMeanLife = 0.150;          const.numMeanLife = (round(const.numMeanLife/const.frame_dur));
+
+%% Color RDKs
+% filled dot
+RDK.dottype = 2;
+
+trl.dotcolor1 = [0  172   0]/255;  % Green
+trl.dotcolor2 = [244 0 0]/255;  % Red
+
+% Convert them to L*a*b* to get the baseline hues
+white_point = [0.95047, 1.00000, 1.08883];
+
+baseline_green_xyz = rgb2xyz(trl.dotcolor1, 'ColorSpace', 'srgb');
+baseline_red_xyz = rgb2xyz(trl.dotcolor2, 'ColorSpace', 'srgb');
+
+trl.baseline_green_lab = xyz2lab(baseline_green_xyz, 'WhitePoint', white_point);
+trl.baseline_red_lab = xyz2lab(baseline_red_xyz, 'WhitePoint', white_point);
+
+% Calculate baseline chroma (saturation) for each color
+half_saturation_green = .4;
+half_saturation_red = .4;
+
+full_saturation_green = 1;
+full_saturation_red = 1;
+
+[low_sat_green] = adjust_chroma(half_saturation_green, trl.baseline_green_lab);
+[low_sat_red] = adjust_chroma(half_saturation_red, trl.baseline_red_lab);
+
+[full_sat_green] = adjust_chroma(full_saturation_green, trl.baseline_green_lab);
+[full_sat_red] = adjust_chroma(full_saturation_red, trl.baseline_red_lab);
+
+
+trl.dotcolor1_reduc_sat = low_sat_green;
+trl.dotcolor2_reduc_sat = low_sat_red;
+
+trl.dotcolor1_high_sat = full_sat_green;
+trl.dotcolor2_high_sat = full_sat_red;
+
+
+trl.color1_lsat = repmat(low_sat_green, const.numDots, 1)';
+trl.color2_lsat = repmat(low_sat_red, const.numDots, 1)';
+trl.color3_lsat = repmat(low_sat_green, const.numDots, 1)';
+trl.color4_lsat = repmat(low_sat_red, const.numDots, 1)';
 
 %% Define circle parameters (dashed circle around the RDK)
 
-circle1.ecc_dva = RDK.EccDVA; % 8 degrees of visual angle
-circle1.rad_dva = 1.7;     % 4 degrees of visual angle
+circle1.ecc_dva = RDK.EccDVA; %  degrees of visual angle
+circle1.rad_dva = (RDK.size_dva/2)+.5;     %  degrees of visual angle
 
 % Convert DVA to pixels
 circle1.ecc_pix = dva2pix(info.scr_dist_cm,info.scr_xsize_cm,info.scr_xsize,circle1.ecc_dva);
@@ -161,65 +191,46 @@ circle1.linegap = 3;
 
 %% Matrix of trials
 
+target_color = [repelem([1 2],40)'; repelem([1 2],40)'];
+target_side = repelem([1 2],80)';
+target_field = repmat([repelem([1 2],20)'; repelem([1 2],20)'],2,1);
 
-target_side = repelem([1 2], 30)';
-target_color = [repelem([1 2],15)'; repelem([1 2],15)'];
-target_ori = [Shuffle(repelem([1 2],15))'; Shuffle(repelem([1 2],15))'];
-catch_trl = repmat([repelem(0,12) repelem(1,3)],1,4)';
+%               targ color       target side   target quadrant   
+%                1 - green        1 = left       1=UPPER       
+%                2 - red          2 = right      2=LOWER     
 
-
-%               targ color       target side   target ori    catch trials
-%                1 - green        1 = left       1=UP         1 = catch
-%                2 - red          2 = right      2=Down       0 = no catch
-
-mat.matrix =    [target_color     target_side  target_ori    catch_trl];
+mat.matrix =    [target_color     target_side  target_field];
 
 mat.matrix = Shuffle(mat.matrix,2);
 
 
-    %%
-    trl.targ_ori(mat.matrix(:,3)' == 1,1) = 90;  % UP orientation
-    trl.targ_ori(mat.matrix(:,3)' == 2,1) = 270; % Down orientation
+%%
+% defines trial onset and offset. the onsets are randomized to occur
+% between 1 second (120 frames) - 1.402 seconds (168 frames) ms after fixation onset to avoid temporal
+% expectation.
+trl.cue_on = randi([120 168],1,info.ntrials)'; 
+trl.cue_off = trl.cue_on + 9; % cue offset after 75 ms
 
-    % defines trial onset and offset. the onsets are randomized to occur
-    % between 500 (60 frames) - 900 (109 frames) ms after fixation onset to avoid temporal
-    % expectation.
-    %     trl.cue_on = randi([60 109],1,60)';
-    %     trl.cue_off = trl.cue_on + 9; % cue offset after 75 ms
+trl.targ_on = trl.cue_on + 8; % presents the target 66 ms after cue onset (SOA)
+trl.targ_off = trl.targ_on + 15; % it will stay on the screen for 125ms
 
-    trl.cue_on = randi([30 54],1,60)';
-    trl.cue_off = trl.cue_on + 5; % cue offset after 83 ms
-
-    %     trl.targ_on = trl.cue_on + 18; % presents the target 150ms after cue onset (SOA)
-    %     trl.targ_off = trl.targ_on + 5; % it will stay on the screen for 40ms
-
-    trl.targ_on = trl.cue_on; % presents the target at the same time of the cue
-    trl.targ_off = trl.targ_on + 12; % it will stay on the screen for 200 ms
-
-    trl.coherence = zeros(60,4);
-
-    trl.coherence(:,1) = mat.matrix(:,1) == 1 & mat.matrix(:,2) == 1 & mat.matrix(:,4) == 0; % green Left
-    trl.coherence(:,2) = mat.matrix(:,1) == 2 & mat.matrix(:,2) == 1 & mat.matrix(:,4) == 0; % Red Left
-    trl.coherence(:,3) = mat.matrix(:,1) == 1 & mat.matrix(:,2) == 2 & mat.matrix(:,4) == 0; % Green Right
-    trl.coherence(:,4) = mat.matrix(:,1) == 2 & mat.matrix(:,2) == 2 & mat.matrix(:,4) == 0; % Red Right
-
-
-    %%
+%%
 % 1Up/1Down PARAMETERS
-[info] = UD_info(info,sub);
+[info] = UD_info(info); % green saturation
+[info] = UD2_info(info); % red saturation
 
-    %% Create data directories
+%% Create data directories
 
-    if ~exist(sprintf('%s/Data/S%d/Staircase/', pc_path, sub.id_num), 'dir')
-        mkdir(sprintf('%s/Data/S%d/Staircase/', pc_path, sub.id_num))
-    end
+if ~exist(sprintf('%s/Data/S%d/Staircase/', pc_path, sub.id_num), 'dir')
+    mkdir(sprintf('%s/Data/S%d/Staircase/', pc_path, sub.id_num))
+end
 
-    %%
-    %%% Save files
+%%
+%%% Save files
 
-    % Save trials information
-    sub.trlinfo_fname = sprintf('ses_%d_staircase_sub_%d_%s',sub.ses_num, sub.id_num, datestr(now,'yymmdd-HHMM')); %#ok<*TNOW1,*DATST>
-    save(fullfile(sprintf('%s/Data/S%d/Staircase/%s', pc_path, sub.id_num), [sub.trlinfo_fname, '.mat']), 'info', 'trl', 'sub','mat','circle1','const','RDK', '-v7.3');
+% Save trials information
+sub.trlinfo_fname = sprintf('ses_%d_staircase_sub_%d_%s',sub.ses_num, sub.id_num, datestr(now,'yymmdd-HHMM')); %#ok<*TNOW1,*DATST>
+save(fullfile(sprintf('%s/Data/S%d/Staircase/%s', pc_path, sub.id_num), [sub.trlinfo_fname, '.mat']), 'info', 'trl', 'sub','mat','circle1','const','RDK', '-v7.3');
 
-    fprintf('\nFeito!\n')
+fprintf('\nFeito!\n')
 

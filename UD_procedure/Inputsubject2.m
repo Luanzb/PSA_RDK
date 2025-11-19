@@ -1,16 +1,15 @@
 function [sub,info] = Inputsubject2(sub,info)
 
-start_value = num2str(info.UD_start_value); step_size = num2str(info.UD_step_size_down);
+start_value = num2str(10^info.UD_start_value);
 if sub.ses_num == 1
     prompt = {...
         'Numero voluntario',...
         'Numero sessao',...
         'Olho dominante (E/D)',...
         'Limiar inicial',...
-        'Step size',...
         'TREINO?'};
 
-    defanswer = {sub.id, sub.ses, '', start_value, step_size,''};
+    defanswer = {sub.id, sub.ses, '', start_value,''};
     answer = inputdlg(prompt, '', [1 22], defanswer);
 
     sub.id = answer{1};
@@ -26,7 +25,7 @@ if sub.ses_num == 1
     else; error('Olho dominante inválido.');
     end
 
-    sub.treino = answer{6};
+    sub.treino = answer{5};
 
 else
 
@@ -35,10 +34,9 @@ else
         'Numero sessao',...
         'Olho dominante (E/D)',...
         'Limiar inicial',...
-        'Step size',...
         'TREINO?'};
 
-    defanswer = {sub.id, sub.ses, '', '', '',''};
+    defanswer = {sub.id, sub.ses, '', '',''};
     answer = inputdlg(prompt, '', [1 22], defanswer);
 
     sub.id = answer{1};
@@ -54,10 +52,9 @@ else
     else; error('Olho dominante inválido.');
     end
 
-     info.UD_start_value = str2double(answer{4});
-     info.UD_step_size_down = str2double(answer{5});
+     info.UD_start_value = log10(str2double(answer{4}));
 
-     sub.treino = answer{6};
+     sub.treino = answer{5};
 
 end
 

@@ -1,14 +1,14 @@
 
 close all; clear; clc;
 
-git_path = 'C:/Users/activ/OneDrive/Documentos/GitHub/PSA_RDK';
+
+git_path = '/home/kaneda/Documents/GitHub/PSA_RDK';
 addpath(genpath(git_path));
 
-pc_path = 'C:/Users/activ/OneDrive/Documentos/Projects/PSA_RDK';
+pc_path = '/home/kaneda/Documents/Projects/PSA_RDK';
 addpath(genpath(pc_path));
 
-
-pal_path = 'C:/Users/activ/OneDrive/Documentos/Palamedes';
+pal_path = '/home/kaneda/Documents/Palamedes1_11_11/Palamedes';
 addpath(genpath(pal_path));
 
 
@@ -24,24 +24,19 @@ info_file = dir(info_path);
 load([info_file.folder '/' info_file.name])
 
 
-% first session only
-if sub.ses_num == 1
-    info.UD_start_value = .7;
-    info.UD_step_size_down = .05;
-end
-
 [sub,info] = Inputsubject2(sub,info);
 
 
 if sub.treino == 's'
-    % which kind of training?
+
+        % which kind of training?
     answertr = inputdlg({'Treino normal? s/n'}, '', [1 25]);
 
 
-    if string(answertr) == 's'
-        info.trng_time = 0;
+    if string(answertr) ~= 's'
+        info.colorsat = 1; % easy training - colors full saturated
     else
-        info.trng_time = 0.03;
+        info.colorsat = 0;
     end
 
 end
@@ -49,12 +44,13 @@ end
 
 %% Run experiment
 
-[resp,UD,dots] = Stair_On_Screen(info,trl,sub,mat,RDK,const,circle1);
+[UD,UD2,time,dots] = Stair_On_Screen(info,trl,sub,mat,RDK,const,circle1);
 
 
 
 if sub.treino ~= 's'
-    UD_analysis(UD,resp,sub)
-   % save(fullfile(sprintf('%s/Data/S%d/Staircase/%s', pc_path, sub.id_num), [info_file.name]), 'gabor', 'info', 'mask','mat','sub','trl','resp','UD', '-v7.3');
+    UD_analysis(UD,UD2, trl,time)
+
+    save(fullfile(sprintf('%s/Data/S%d/Staircase/%s', pc_path, sub.id_num), [info_file.name]), 'UD','time','info','trl','sub','mat','RDK','const','circle1', '-v7.3');
 end
 

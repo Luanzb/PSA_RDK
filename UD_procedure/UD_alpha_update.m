@@ -1,5 +1,6 @@
-function [RDK] = UD_alpha_update(RDK,UD)
+function [trl] = UD_alpha_update(trl,UD)
 
-         RDK.kappa = UD.xCurrent*100;
+  trl.new_sat11  = (10^UD.xCurrent) / 100;
 
+        
 end
