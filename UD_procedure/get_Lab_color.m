@@ -1,6 +1,6 @@
 % Your current isoluminant colors
-red_rgb_iso = [242 0 0]/255;
-green_rgb_iso = [0 170 0]/255;
+red_rgb_iso = [255 0 0]/255;
+green_rgb_iso = [0 149.5 0]/255;
 
 white_point = [0.95047, 1.00000, 1.08883];
  

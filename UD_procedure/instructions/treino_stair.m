@@ -134,8 +134,8 @@ trl.baseline_green_lab = xyz2lab(baseline_green_xyz, 'WhitePoint', white_point);
 trl.baseline_red_lab = xyz2lab(baseline_red_xyz, 'WhitePoint', white_point);
 
 % Calculate baseline chroma (saturation) for each color
-half_saturation_green = .4;
-half_saturation_red = .4;
+half_saturation_green = .5;
+half_saturation_red = .5;
 
 full_saturation_green = 1;
 full_saturation_red = 1;

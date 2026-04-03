@@ -1,4 +1,4 @@
-function [new_color_rgb] = adjust_chroma(color_chroma_scale, baseline_color_lab)
+function [new_color_rgb,new_color_xyz] = adjust_chroma(color_chroma_scale, baseline_color_lab)
     % PURPOSE: Adjust ONLY chroma while preserving original hue and lightness
     % INPUT:
     %   red_rgb, green_rgb: current RGB colors (can be ignored if we use baseline_lab)

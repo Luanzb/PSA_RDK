@@ -1,4 +1,4 @@
-function  [resp,time,srt,trl] = Screen_RDK(info,trl,sub,RDK,const,circle1)
+function  [resp,time,srt,trl] = Screen_RDK(info,trl,sub,RDK,circle1,dots,dots2,dots3,dots4)
 
 % First column  = Hits;
 % Second column = False Alarms
@@ -119,10 +119,14 @@ try
 
     abort = false;
 
+    
+    % movieName = 'trial_recording_slow_RDK_green.mp4';
+    % moviePtr = Screen('CreateMovie', win, movieName, [], [], 20);
+
 
     while trial <= info.ntrials
 
-        const.max_fr = trl.targ_off(trial);
+        %const.max_fr = trl.targ_off(trial);
 
         SRT2 = 2; resp_trng = 2;
 
@@ -131,10 +135,10 @@ try
 
         % Create only distractor stimulus
 
-        [dots]  = draw_rdk(const, RDK,0); % green left
-        [dots2] = draw_rdk(const, RDK,0); % red left
-        [dots3] = draw_rdk(const, RDK,0); % green right
-        [dots4] = draw_rdk(const, RDK,0); % red right
+        % [dots]  = draw_rdk(const, RDK,0); % green left
+        % [dots2] = draw_rdk(const, RDK,0); % red left
+        % [dots3] = draw_rdk(const, RDK,0); % green right
+        % [dots4] = draw_rdk(const, RDK,0); % red right
 
 
 
@@ -376,30 +380,30 @@ try
                     if info.matrix(trial,2) == 1 && info.matrix(trial,5) == 1
 
                         if info.matrix(trial,6) == 2 % lower quadrant
-                            col_idx = dots{1,1}(1).posi{1,frameIdx}(:,2) > 0;
+                            col_idx = dots{1,trial}(1).posi{1,frameIdx}(:,2) > 0;
                             color11(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
                         else
-                            col_idx = dots{1,1}(1).posi{1,frameIdx}(:,2) < 0; % upper quadrant
+                            col_idx = dots{1,trial}(1).posi{1,frameIdx}(:,2) < 0; % upper quadrant
                             color11(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
                         end
 
                     elseif info.matrix(trial,2) == 2 && info.matrix(trial,5) == 1
 
                         if info.matrix(trial,6) == 2 % lower quadrant
-                            col_idx = dots2{1,1}(1).posi{1,frameIdx}(:,2) > 0;
+                            col_idx = dots2{1,trial}(1).posi{1,frameIdx}(:,2) > 0;
                             color22(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
                         else
-                            col_idx = dots2{1,1}(1).posi{1,frameIdx}(:,2) < 0;
+                            col_idx = dots2{1,trial}(1).posi{1,frameIdx}(:,2) < 0;
                             color22(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
                         end
 
                     elseif info.matrix(trial,2) == 1 && info.matrix(trial,5) == 2
 
                         if info.matrix(trial,6) == 2 % lower quadrant
-                            col_idx = dots3{1,1}(1).posi{1,frameIdx}(:,2) > 0;
+                            col_idx = dots3{1,trial}(1).posi{1,frameIdx}(:,2) > 0;
                             color33(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
                         else
-                            col_idx = dots3{1,1}(1).posi{1,frameIdx}(:,2) < 0;
+                            col_idx = dots3{1,trial}(1).posi{1,frameIdx}(:,2) < 0;
                             color33(:, col_idx) = repmat(trl.new_sat1', 1, sum(col_idx));
                         end
 
@@ -407,10 +411,10 @@ try
 
                         if info.matrix(trial,6) == 2 % lower quadrant
 
-                            col_idx = dots4{1,1}(1).posi{1,frameIdx}(:,2) > 0;
+                            col_idx = dots4{1,trial}(1).posi{1,frameIdx}(:,2) > 0;
                             color44(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
                         else
-                            col_idx = dots4{1,1}(1).posi{1,frameIdx}(:,2) < 0;
+                            col_idx = dots4{1,trial}(1).posi{1,frameIdx}(:,2) < 0;
                             color44(:, col_idx) = repmat(trl.new_sat2', 1, sum(col_idx));
                         end
                     end
@@ -422,11 +426,11 @@ try
                     color44 = trl.color4_lsat;
                 end
 
-                Screen('DrawDots',win, round(dots{1}(1).posi{frameIdx})', dots{1}(1).siz, color11, RDK.coordL,2);
-                Screen('DrawDots',win, round(dots2{1}(1).posi{frameIdx})', dots2{1}(1).siz,color22, RDK.coordL,2);
+                Screen('DrawDots',win, round(dots{trial}(1).posi{frameIdx})', dots{trial}(1).siz, color11, RDK.coordL,2);
+                Screen('DrawDots',win, round(dots2{trial}(1).posi{frameIdx})', dots2{trial}(1).siz,color22, RDK.coordL,2);
 
-                Screen('DrawDots',win, round(dots3{1}(1).posi{frameIdx})', dots3{1}(1).siz, color33, RDK.coordR,2);
-                Screen('DrawDots',win, round(dots4{1}(1).posi{frameIdx})', dots4{1}(1).siz, color44, RDK.coordR,2);
+                Screen('DrawDots',win, round(dots3{trial}(1).posi{frameIdx})', dots3{trial}(1).siz, color33, RDK.coordR,2);
+                Screen('DrawDots',win, round(dots4{trial}(1).posi{frameIdx})', dots4{trial}(1).siz, color44, RDK.coordR,2);
 
             end
 
@@ -518,6 +522,10 @@ try
                 end
             end
 
+        % if info.matrix(trial,3) == 1 && info.matrix(trial,2) == 1 && info.matrix(trial,4) == 1 && info.matrix(trial,6) == 1
+        %     % Add frame to movie
+        %     Screen('AddFrameToMovie', win);
+        % end
 
         end
 
@@ -543,6 +551,12 @@ try
         end
 
         Screen('Flip', win);
+
+        % if info.matrix(trial,3) == 1 && info.matrix(trial,2) == 1 && info.matrix(trial,4) == 1 && info.matrix(trial,6) == 1
+        %     % Add frame to movie
+        %     Screen('AddFrameToMovie', win);
+        % end
+
 
         toc
 
@@ -605,6 +619,12 @@ try
             Screen('Flip', win); WaitSecs(0.4);
 
         end
+
+        % if info.matrix(trial,3) == 1 && info.matrix(trial,2) == 1 && info.matrix(trial,4) == 1 && info.matrix(trial,6) == 1
+        %     % Add frame to movie
+        %     Screen('AddFrameToMovie', win);
+        %     Screen('FinalizeMovie', moviePtr);
+        % end
 
         if  SRT2 > 0.33
 

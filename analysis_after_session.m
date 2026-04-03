@@ -10,9 +10,9 @@ addpath(genpath(density));
 load('/home/kaneda/Documents/Projects/PSA_RDK/colomap_v2.mat')
 %%
 
-subject = 1;
+subject = 16;
 
-ses = 1;
+ses = 2;
 
 
 valor = [1 720];
@@ -23,7 +23,7 @@ matrix = zeros(720,7);
 response = zeros(720,1);
 
 
-sacc_off = 300;
+sacc_off = 400;
 sacc_on = 170;
 
 

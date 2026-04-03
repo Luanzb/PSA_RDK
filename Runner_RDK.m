@@ -52,7 +52,7 @@ trl.dotcolor2_high_sat = full_sat_red;
 
 %% Run experiment
 
-[resp,time,srt,trl] = Screen_RDK(info,trl,sub,RDK,const,circle1);
+[resp,time,srt,trl] = Screen_RDK(info,trl,sub,RDK,circle1,dots,dots2,dots3,dots4);
 
 %%
 
@@ -70,4 +70,4 @@ end
  
  [s] = GetSRT(sub);
 % 
-save(fullfile(sprintf('%s/Data/S%d/Task/%s', pc_path, sub.id_num), [sub.data_fname, '.mat']), 'resp', 'time', 'info','trl','sub','RDK','const','circle1','srt','s', '-v7.3'); % resp
+save(fullfile(sprintf('%s/Data/S%d/Task/%s', pc_path, sub.id_num), [sub.data_fname, '.mat']), 'resp', 'time', 'info','trl','sub','RDK','const','circle1','srt','s','dots','dots2','dots3','dots4', '-v7.3'); % resp

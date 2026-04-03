@@ -31,7 +31,7 @@ colors = [trl.new_sat1; trl.new_sat1; trl.new_sat2; trl.new_sat2];
 target_side = [741-15; 741-15; 1179-15; 1179-15];
 target_field = [540-120; 120+540;540-120;120+540];
 
-trial = 12;
+trial = 1;
 
 sat = [1:12 100 90 80 70];
 

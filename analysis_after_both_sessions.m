@@ -12,29 +12,30 @@ load('/home/kaneda/Documents/Projects/PSA_RDK/colomap_v2.mat')
 valor = [1 720
     721 1440];
 
-sac = zeros(720,1);
-resp3 = zeros(720,1);
-matrix = zeros(720,7);
-response = zeros(720,1);
+sac = zeros(1440,1);
+resp3 = zeros(1440,1);
+matrix = zeros(1440,7);
+response = zeros(1440,1);
 
 
-sacc_off = 300;
+sacc_off = 400;
 sacc_on = 170;
 
+subject = [1:4 6:15];
 
 count = 1;
 
-for subject = 1:3
+for subject1 = 14
 
-    data_path = sprintf('/home/kaneda/Documents/Projects/PSA_RDK/Data/S%d/Task/', subject);
+    data_path = sprintf('/home/kaneda/Documents/Projects/PSA_RDK/Data/S%d/Task/', subject(subject1));
     addpath(genpath(data_path));
 
-    for ses = 1
+    for ses = 1:2
 
 
-        files = fullfile(sprintf('%s/data_sub_%d_ses_%d_*.mat',data_path,subject,ses));
+        files = fullfile(sprintf('%s/data_sub_%d_ses_%d_*.mat',data_path,subject(subject1),ses));
         file = dir(files);
-        load(file.name);
+        load(file.name,'resp', 'time', 'info','trl','sub','RDK','const','circle1','srt','s');
 
          macrosacvec2 = s.macrosacvec;
 
@@ -78,19 +79,19 @@ for subject = 1:3
         pre_pc3 = resp3(matrix(:,1) == 2 & sac(:,1) == 1,1);%inval high
         pre_pc4 = resp3(matrix(:,1) == 4 & sac(:,1) == 1,1);% inval low
 
-        pc1(subject,1) = (sum(pre_pc1) / size(pre_pc1,1)); % val high
-        pc1(subject,2) = (sum(pre_pc2) / size(pre_pc2,1)); % val low
-        pc1(subject,3) = (sum(pre_pc3) / size(pre_pc3,1)); % inval high
-        pc1(subject,4) = (sum(pre_pc4) / size(pre_pc4,1)); % inval low
+        pc1(1,1) = (sum(pre_pc1) / size(pre_pc1,1)); % val high
+        pc1(1,2) = (sum(pre_pc2) / size(pre_pc2,1)); % val low
+        pc1(1,3) = (sum(pre_pc3) / size(pre_pc3,1)); % inval high
+        pc1(1,4) = (sum(pre_pc4) / size(pre_pc4,1)); % inval low
 
 
 %% sensitivity (d' rpime)
         
 
-    dprime1(subject,1) = sqrt(2) * norminv(pc1(subject,1));
-    dprime1(subject,2) = sqrt(2) * norminv(pc1(subject,2));
-    dprime1(subject,3) = sqrt(2) * norminv(pc1(subject,3));
-    dprime1(subject,4) = sqrt(2) * norminv(pc1(subject,4));
+    dprime1(1,1) = sqrt(2) * norminv(pc1(1,1));
+    dprime1(1,2) = sqrt(2) * norminv(pc1(1,2));
+    dprime1(1,3) = sqrt(2) * norminv(pc1(1,3));
+    dprime1(1,4) = sqrt(2) * norminv(pc1(1,4));
 
 
 
@@ -115,16 +116,16 @@ for subject = 1:3
                                 trial_3     pre_3    
                                 trial_4     pre_4];
 
-    vec(subject).macv = macvec1; 
+    vec(1).macv = macvec1; 
 
 end
 
-macvec = [vec(1).macv;vec(2).macv;vec(3).macv];
-dprime = mean(dprime1);
-pc = mean(pc1);
+macvec = [vec(1).macv];
+dprime = dprime1;
+pc = pc1;
 %% Sensitivity (d) for both saccade congrency and feature probability
 
-%subplot(3,3,1)
+subplot(3,3,1)
 
 plot3 = bar([1 2],[dprime(1:2);dprime(3:4)],LineWidth=1.5,BarWidth=.4);
 plot3(1).EdgeColor = [205,101,0]/255;
@@ -153,10 +154,10 @@ errorbar(x_coords, mean(dprime1), error, 'Color',[.4 .4 .4], 'LineStyle', 'none'
 
 hold on;
 
-scatter([repelem(.85,3)], dprime1(:,1),30,'filled','o','MarkerFaceColor',[205,101,0]/255)
-scatter([repelem(1.15,3)], dprime1(:,2),30,'filled','o','MarkerFaceColor',[0 0 0])
-scatter([repelem(1.85,3)], dprime1(:,3),30,'filled','o','MarkerFaceColor',[205,101,0]/255)
-scatter([repelem(2.15,3)], dprime1(:,4),30,'filled','o','MarkerFaceColor',[0 0 0])
+scatter([repelem(.85,subject1)], dprime1(:,1),30,'filled','o','MarkerFaceColor',[205,101,0]/255)
+scatter([repelem(1.15,subject1)], dprime1(:,2),30,'filled','o','MarkerFaceColor',[0 0 0])
+scatter([repelem(1.85,subject1)], dprime1(:,3),30,'filled','o','MarkerFaceColor',[205,101,0]/255)
+scatter([repelem(2.15,subject1)], dprime1(:,4),30,'filled','o','MarkerFaceColor',[0 0 0])
 title('Discrimination performance','FontSize',6);
 
 name={'Congruent';'Incongruent'};
@@ -404,10 +405,10 @@ errorbar(x_coords, mean(pc1)*100, error, 'k', 'LineStyle', 'none', 'CapSize', 0,
 
 hold on;
 
-scatter([repelem(.85,3)], pc1(:,1)*100,30,'filled','o','MarkerFaceColor',[205,101,0]/255)
-scatter([repelem(1.15,3)], pc1(:,2)*100,30,'filled','o','MarkerFaceColor',[0 0 0])
-scatter([repelem(1.85,3)], pc1(:,3)*100,30,'filled','o','MarkerFaceColor',[205,101,0]/255)
-scatter([repelem(2.15,3)], pc1(:,4)*100,30,'filled','o','MarkerFaceColor',[0 0 0])
+scatter([repelem(.85,subject1)], pc1(:,1)*100,30,'filled','o','MarkerFaceColor',[205,101,0]/255)
+scatter([repelem(1.15,subject1)], pc1(:,2)*100,30,'filled','o','MarkerFaceColor',[0 0 0])
+scatter([repelem(1.85,subject1)], pc1(:,3)*100,30,'filled','o','MarkerFaceColor',[205,101,0]/255)
+scatter([repelem(2.15,subject1)], pc1(:,4)*100,30,'filled','o','MarkerFaceColor',[0 0 0])
 
 
 title('Discrimination performance','FontSize',6);

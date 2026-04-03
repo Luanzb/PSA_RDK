@@ -14,6 +14,7 @@ eyedf = edfmex(fullfile(var));
 
 eye = eyedf.RECORDINGS(1).eye;
 
+
 %% get event times
 
 eyedat = [];
